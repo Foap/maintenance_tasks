@@ -240,6 +240,34 @@ module MaintenanceTasks
       self.class.no_collection?
     end
 
+    # Counters the Task can accumulate as it processes, persisted onto the Run
+    # and rendered in the UI when the Run finishes. This is what replaces the
+    # `puts` summary a rake task would print, which nobody can see when the work
+    # runs in a Sidekiq worker.
+    #
+    #   def process(record)
+    #     summary[:scanned] += 1
+    #     summary[:updated] += 1 if record.update(...)
+    #   end
+    #
+    # Defaults to 0 per key so a task can count without initializing anything.
+    # Values are JSON-serialized onto the Run, so keep them to primitives.
+    #
+    # @return [Hash] the counters accumulated so far.
+    def summary
+      @summary ||= Hash.new(0)
+    end
+
+    # Seeds the counters, used to carry them across an interruption: a long Task
+    # is re-instantiated each time its job is re-enqueued, so without this the
+    # totals would restart from zero on every resumption and the final numbers
+    # would only describe the last segment.
+    #
+    # @param counters [Hash, nil] counters persisted from an earlier segment.
+    def summary=(counters)
+      @summary = Hash.new(0).merge((counters || {}).symbolize_keys)
+    end
+
     # The collection to be processed, delegated to the strategy.
     #
     # @return the collection.

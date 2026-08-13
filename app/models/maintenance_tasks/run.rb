@@ -48,6 +48,12 @@ module MaintenanceTasks
     serialize :backtrace
     serialize :arguments, JSON
 
+    # Counters a Task accumulated while running, persisted so the outcome is
+    # readable in the UI rather than only in the server log. Upstream has no
+    # equivalent: its `metadata` column is input captured from the controller at
+    # enqueue time (who started the run), not a result. See Task#summary.
+    serialize :summary, JSON
+
     scope :active, -> { where(status: ACTIVE_STATUSES) }
 
     # Ensure ActiveStorage is in use before preloading the attachments

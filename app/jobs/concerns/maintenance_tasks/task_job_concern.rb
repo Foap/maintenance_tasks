@@ -110,6 +110,10 @@ module MaintenanceTasks
     def before_perform
       @run = arguments.first
       @task = @run.task
+      # Carry counters across interruptions: this job is re-enqueued when it hits
+      # JobIteration.max_job_runtime, and each segment builds a fresh Task, so
+      # without seeding the totals would describe only the final segment.
+      @task.summary = @run.summary
       if @task.has_csv_content?
         @task.csv_content = @run.csv_file.download
       end
@@ -155,6 +159,9 @@ module MaintenanceTasks
     end
 
     def after_perform
+      # Covers every non-error exit — succeeded, paused, interrupted, cancelled —
+      # because persist_transition below is the save! they all share.
+      @run.summary = @task.summary if defined?(@task) && @task
       @run.persist_transition
       if defined?(@reenqueue_iteration_job) && @reenqueue_iteration_job
         reenqueue_iteration_job(should_ignore: false) unless @run.stopped?
@@ -165,6 +172,9 @@ module MaintenanceTasks
       @ticker.persist if defined?(@ticker)
 
       if defined?(@run)
+        # after_perform does not run on this path, so the counters up to the
+        # failure — the most interesting ones — would otherwise be lost.
+        @run.summary = @task.summary if defined?(@task) && @task
         @run.persist_error(error)
 
         task_context = {
