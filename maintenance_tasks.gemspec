@@ -19,9 +19,14 @@ Gem::Specification.new do |spec|
   spec.bindir = "exe"
   spec.executables = ["maintenance_tasks"]
 
-  spec.add_dependency("actionpack", ">= 6.0")
-  spec.add_dependency("activejob", ">= 6.0")
-  spec.add_dependency("activerecord", ">= 6.0")
+  # Lowered from ">= 6.0" for the Foap fork. Everything this version of the
+  # engine needs is present in Rails 5.2: ActiveModel::Attributes (task
+  # parameters), update_counters(touch:), the content_security_policy DSL, and
+  # the classic-autoloader path the engine still ships. The only Rails 6 API in
+  # the source was Rails.autoloaders, guarded in lib/maintenance_tasks/engine.rb.
+  spec.add_dependency("actionpack", ">= 5.2")
+  spec.add_dependency("activejob", ">= 5.2")
+  spec.add_dependency("activerecord", ">= 5.2")
   spec.add_dependency("job-iteration", "~> 1.3.6")
-  spec.add_dependency("railties", ">= 6.0")
+  spec.add_dependency("railties", ">= 5.2")
 end
