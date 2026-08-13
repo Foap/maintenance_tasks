@@ -23,7 +23,16 @@ module MaintenanceTasks
     before_action do
       request.content_security_policy_nonce_generator ||=
         ->(_request) { SecureRandom.base64(16) }
-      request.content_security_policy_nonce_directives = ["style-src"]
+
+      # Rails 6.0 added per-request nonce directives; on 5.2 the set is the
+      # hardcoded ActionDispatch NONCE_DIRECTIVES = %w[script-src], so this
+      # setter does not exist and calling it raises NoMethodError. Nothing else
+      # is needed on 5.2: the layout's inline <style> block is admitted by the
+      # 'sha256-...' source already listed in style_src above, which matches
+      # whether or not the element also carries an unusable nonce attribute.
+      if request.respond_to?(:content_security_policy_nonce_directives=)
+        request.content_security_policy_nonce_directives = ["style-src"]
+      end
     end
 
     protect_from_forgery with: :exception
