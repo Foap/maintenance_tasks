@@ -40,8 +40,11 @@ module MaintenanceTasks
       # to_prepare runs on every reload, so the engine is rebuilt each time. It must
       # also come before the app's tasks are required, so each Task subclass attaches
       # to the MaintenanceTasks::Task loaded in this same pass.
+      #
+      # Engine.eager_load! is spelled out because `self` inside a to_prepare block is
+      # the reloader's execution context, not the engine as it is in an initializer.
       unless MaintenanceTasks.zeitwerk_enabled?
-        eager_load!
+        MaintenanceTasks::Engine.eager_load!
 
         tasks_module = MaintenanceTasks.tasks_module.underscore
         Dir["#{Rails.root}/app/tasks/#{tasks_module}/*.rb"].each do |file|
