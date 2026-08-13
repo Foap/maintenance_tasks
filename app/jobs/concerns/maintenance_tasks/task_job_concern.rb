@@ -110,6 +110,8 @@ module MaintenanceTasks
     def before_perform
       @run = arguments.first
       @task = @run.task
+      # Lets the task attribute anything it records to the run performing it.
+      @task.run = @run
       # Carry counters across interruptions: this job is re-enqueued when it hits
       # JobIteration.max_job_runtime, and each segment builds a fresh Task, so
       # without seeding the totals would describe only the final segment.

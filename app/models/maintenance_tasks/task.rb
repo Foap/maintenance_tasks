@@ -11,6 +11,19 @@ module MaintenanceTasks
 
     class NotFoundError < NameError; end
 
+    # The Run currently performing this Task, assigned by the job before it starts.
+    #
+    # Upstream keeps the Task ignorant of its Run, which leaves a task unable to
+    # attribute anything it writes to the run that caused it. Setting it here lets a
+    # task record its own audit rows against the run without the host application
+    # having to reach into the job. nil when the task was instantiated outside a run,
+    # as the controller does to build the parameter form.
+    #
+    # Rails 6.0's ActiveModel::Attributes offers no equivalent, so this is a plain
+    # accessor rather than an `attribute`: it must not appear in attribute_names,
+    # or the engine would render it as a task parameter.
+    attr_accessor :run
+
     # Rails 6.0 added ActiveModel::Attributes#attribute_names and its class-method
     # counterpart; on Rails 5.2 the concern registers attribute_types but neither
     # reader exists. The engine needs both — TaskData#parameter_names calls the
