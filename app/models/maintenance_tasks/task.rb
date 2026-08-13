@@ -11,6 +11,29 @@ module MaintenanceTasks
 
     class NotFoundError < NameError; end
 
+    # Rails 6.0 added ActiveModel::Attributes#attribute_names and its class-method
+    # counterpart; on Rails 5.2 the concern registers attribute_types but neither
+    # reader exists. The engine needs both — TaskData#parameter_names calls the
+    # class method to build the run form, and Run#task / the argument validation
+    # call the instance method — so a task with parameters was unrenderable and
+    # unrunnable on 5.2 without them.
+    #
+    # Defined only when absent so that on Rails 6+ the framework's own
+    # implementations stay in charge.
+    unless respond_to?(:attribute_names)
+      def self.attribute_names
+        attribute_types.keys
+      end
+
+      # Every attribute is declared on the class, so the instance view of the
+      # names is the class's. This sidesteps AttributeSet#keys, which on 5.2
+      # filters to initialized attributes and would hide a parameter the user
+      # simply left blank.
+      def attribute_names
+        self.class.attribute_names
+      end
+    end
+
     # The throttle conditions for a given Task. This is provided as an array of
     # hashes, with each hash specifying two keys: throttle_condition and
     # backoff. Note that Tasks inherit conditions from their superclasses.
